@@ -89,6 +89,39 @@ if ($authed && isset($_POST['id'], $_POST['report_notes']) && $csrfOk()) {
     exit;
 }
 
+// Bestandskunden als CSV für die Akquise-Liste, eine Zeile je Kunde
+if ($authed && isset($_GET['export'])) {
+    $rows = [];
+    foreach (with_bookings(fn(array $b) => $b) as $b) {
+        if ($b['status'] !== 'bestaetigt' || !$b['items']) {
+            continue;
+        }
+        $k = mb_strtolower($b['customer']['email']);
+        $end = booking_end($b);
+        $r = $rows[$k] ?? ['count' => 0, 'total' => 0.0, 'end' => ''];
+        $r['count']++;
+        $r['total'] += $b['net'];
+        if ($end >= $r['end']) {
+            $r = array_merge($r, ['end' => $end, 'b' => $b]);
+        }
+        $rows[$k] = $r;
+    }
+    $de = fn(float $v) => number_format($v, 2, ',', '');
+    $date = fn(?string $iso) => $iso ? (new DateTimeImmutable($iso))->format('d.m.Y') : '';
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="bestandskunden-' . date('Y-m-d') . '.csv"');
+    $out = fopen('php://output', 'w');
+    fwrite($out, "\xEF\xBB\xBF");
+    fputcsv($out, ['Firma', 'Ansprechperson', 'E-Mail', 'Branche', 'Letzte Buchung', 'Kampagnenende', 'Umsatz letzte Buchung netto', 'Buchungen gesamt', 'Umsatz gesamt netto', 'Bericht gesendet am'], ';');
+    foreach ($rows as $r) {
+        $b = $r['b'];
+        fputcsv($out, [$b['customer']['company'], $b['customer']['name'], $b['customer']['email'], '', $b['id'], $date($r['end']),
+            $de($b['net']), $r['count'], $de($r['total']), $date($b['reportSent'] ?? null)], ';');
+    }
+    fclose($out);
+    exit;
+}
+
 // Systemcheck für den Livegang
 $checks = [];
 if ($authed && isset($_GET['check'])) {
@@ -245,7 +278,7 @@ $actions = ['bestaetigt' => 'Bestätigen und PDF senden', 'angefragt' => 'Zurüc
   <div class="bk-head"><h2>Buchungsanfragen</h2><a href="?logout=1">Abmelden</a></div>
   <?php if ($flash): ?><p class="flash"><?= $h($flash) ?></p><?php endif ?>
 
-  <p class="small"><a href="?check=1">Systemcheck ausführen</a></p>
+  <p class="small"><a href="?check=1">Systemcheck ausführen</a> · <a href="?export=1">Bestandskunden als CSV</a></p>
   <?php if ($checks): ?>
     <table class="next checks">
       <?php foreach ($checks as [$label, $ok, $info]): ?>

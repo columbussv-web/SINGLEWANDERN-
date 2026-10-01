@@ -18,7 +18,7 @@ Buchungsseite für die Werbeformen laut Mediadaten 2025/2026. Läuft auf jedem P
 - Kampagnenbericht: 3 Tage nach Kampagnenende an den Kunden, mit Versanddaten, optionalen Kennzahlen aus dem Admin und UTM-Hinweis
 - Partner-Landingpage unter `/partner/` für die Kaltakquise, je Branche anpassbar über `?branche=outdoor|reisen|region|ernaehrung|events`. Mit Beispielrechnung aus den Mediadaten und empfohlenem Paket, das direkt in die Buchung führt. Echte Fallbeispiele in `assets/landing.json` unter `cases` eintragen, der Abschnitt erscheint erst dann.
 - Mediadaten-PDF unter `/mediadaten/`, bei jedem Abruf aus `pricing.json` erzeugt. Preise, Reichweite, Zielgruppe und technische Angaben stehen nur dort.
-- Adminbereich unter `/admin/`: Systemcheck für den Livegang, nächste Newsletter-Ausgaben, Newsletter-Belegung, Sidebar-Auslastung, Bannervorschau, PDF-Vorschau, erneuter Versand. Status angefragt, bestätigt, abgelaufen, storniert. Stornierte und abgelaufene Termine sind sofort wieder buchbar. Reaktivieren klappt nur, solange die Termine noch frei sind.
+- Adminbereich unter `/admin/`: Systemcheck für den Livegang, CSV-Export der Bestandskunden für die Akquise-Liste, nächste Newsletter-Ausgaben, Newsletter-Belegung, Sidebar-Auslastung, Bannervorschau, PDF-Vorschau, erneuter Versand. Status angefragt, bestätigt, abgelaufen, storniert. Stornierte und abgelaufene Termine sind sofort wieder buchbar. Reaktivieren klappt nur, solange die Termine noch frei sind.
 
 ## Dateien
 | Pfad | Zweck |
