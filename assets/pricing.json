@@ -188,6 +188,35 @@
           "multiline": true
         }
       ]
+    },
+    "gutschein": {
+      "name": "Partner-Gutscheincode",
+      "description": "Ihr exklusiver Vorteil für unsere Community, z. B. ein Rabatt oder eine Zugabe, beworben im Newsletter. Jede Einlösung macht den Erfolg direkt messbar. Abrechnung als Festpreis, Provision oder Kombination.",
+      "fields": [
+        {
+          "key": "offer",
+          "label": "Ihr Vorteil für die Community"
+        },
+        {
+          "key": "period",
+          "label": "Gültigkeitszeitraum"
+        },
+        {
+          "key": "model",
+          "label": "Gewünschte Abrechnung",
+          "options": [
+            "Festpreis",
+            "Provision je Einlösung",
+            "Kombination aus Festpreis und Provision",
+            "Bitte beraten"
+          ]
+        },
+        {
+          "key": "idea",
+          "label": "Weitere Hinweise",
+          "multiline": true
+        }
+      ]
     }
   },
   "uploadMaxBytes": 153600

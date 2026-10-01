@@ -8,7 +8,7 @@ Buchungsseite für die Werbeformen laut Mediadaten 2025/2026. Läuft auf jedem P
 - Vormerkfrist 7 Tage: Unbestätigte Anfragen verfallen automatisch, Kunde und Mediaberatung erhalten eine Mail. Kein Cronjob nötig, die Prüfung läuft bei jedem Aufruf mit.
 - PDF-Auftragsbestätigung: Ein Klick auf "Bestätigen und PDF senden" im Admin erzeugt das PDF und mailt es an den Kunden, Kopie an die Mediaberatung
 - Kombirabatt 10 % auf den Staffelpreis bei Newsletter plus Sidebar
-- Gesponserte Wanderung und Partnerbeitrag als Anfrage ohne Preis
+- Gesponserte Wanderung, Partnerbeitrag und Partner-Gutscheincode als Anfrage ohne Preis. Anfrage-Felder unterstützen Auswahllisten (`options` in `pricing.json`)
 - Banner-Upload mit Prüfung auf Dateityp, 150 KB und Pixelmaß, im Browser und auf dem Server
 - Live-Preisrechner, Server rechnet jeden Preis selbst nach
 - Mail an Mediaberatung und Kopie an den Kunden

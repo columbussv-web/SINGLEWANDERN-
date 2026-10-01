@@ -105,7 +105,13 @@ foreach ($P['requestProducts'] as $key => $rp) {
     }
     $fields = [];
     foreach ($rp['fields'] as $fd) {
-        $fields[$fd['label']] = $in($key . '_' . $fd['key'], 2000);
+        $v = $in($key . '_' . $fd['key'], 2000);
+        // Auswahlfelder nur mit erlaubten Werten
+        if (isset($fd['options']) && $v !== '' && !in_array($v, $fd['options'], true)) {
+            $errors[] = "Ungültige Auswahl bei {$rp['name']}.";
+            $v = '';
+        }
+        $fields[$fd['label']] = $v;
     }
     $requests[] = ['key' => $key, 'name' => $rp['name'], 'fields' => $fields];
 }

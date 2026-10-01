@@ -183,7 +183,15 @@
       body.append(el("p", { className: "muted small" }, r.description));
       r.fields.forEach((f) => {
         const lab = el("label", {}, f.label);
-        lab.append(f.multiline ? el("textarea", { name: `${key}_${f.key}`, rows: 3 }) : el("input", { type: "text", name: `${key}_${f.key}` }));
+        let input;
+        if (f.options) {
+          input = el("select", { name: `${key}_${f.key}` });
+          input.add(new Option("Bitte wählen", ""));
+          f.options.forEach((o) => input.add(new Option(o, o)));
+        } else {
+          input = f.multiline ? el("textarea", { name: `${key}_${f.key}`, rows: 3 }) : el("input", { type: "text", name: `${key}_${f.key}` });
+        }
+        lab.append(input);
         body.append(lab);
       });
       wrap.append(toggle, body);
