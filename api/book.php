@@ -81,22 +81,11 @@ foreach ($P['products'] as $key => $p) {
     $item['net'] = $qty * $item['unitPrice'];
 
     // Banner prüfen, gespeichert wird erst nach der Belegungsprüfung
-    $f = $_FILES[$key . '_file'] ?? null;
-    if ($f && $f['error'] !== UPLOAD_ERR_NO_FILE) {
-        if ($f['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name'])) {
-            $errors[] = "Upload für {$p['short']} fehlgeschlagen.";
-        } elseif ($f['size'] > $P['uploadMaxBytes']) {
-            $errors[] = "Banner für {$p['short']} ist größer als " . round($P['uploadMaxBytes'] / 1024) . ' KB.';
-        } else {
-            $mime = (new finfo(FILEINFO_MIME_TYPE))->file($f['tmp_name']);
-            $size = @getimagesize($f['tmp_name']);
-            $ext = ['image/jpeg' => 'jpg', 'image/png' => 'png'][$mime] ?? null;
-            if (!$ext || !$size) {
-                $errors[] = "Banner für {$p['short']} muss JPG oder PNG sein.";
-            } else {
-                $uploads[$key] = ['tmp' => $f['tmp_name'], 'ext' => $ext, 'original' => mb_substr(basename($f['name']), 0, 120), 'w' => $size[0], 'h' => $size[1]];
-            }
-        }
+    $u = check_upload($_FILES[$key . '_file'] ?? null, $p['short']);
+    if (isset($u['error'])) {
+        $errors[] = $u['error'];
+    } elseif ($u) {
+        $uploads[$key] = $u;
     }
     $items[] = $item;
 }
@@ -143,6 +132,7 @@ $booking = [
     'id' => 'SW-' . date('ymd') . '-' . strtoupper(bin2hex(random_bytes(2))),
     'created' => date('c'),
     'status' => 'angefragt',
+    'uploadToken' => bin2hex(random_bytes(16)),
     'items' => $items,
     'requests' => $requests,
     'comboDiscount' => $combo,
@@ -163,10 +153,7 @@ with_bookings(function (array $all) use (&$booking, &$conflicts, $uploads) {
     }
     foreach ($booking['items'] as &$it) {
         if (isset($uploads[$it['key']])) {
-            $u = $uploads[$it['key']];
-            $stored = $booking['id'] . '-' . $it['key'] . '-' . bin2hex(random_bytes(4)) . '.' . $u['ext'];
-            move_uploaded_file($u['tmp'], storage_path('uploads/' . $stored));
-            $it['file'] = ['stored' => $stored, 'original' => $u['original'], 'w' => $u['w'], 'h' => $u['h']];
+            $it['file'] = store_upload($booking['id'], $it['key'], $uploads[$it['key']]);
         }
     }
     unset($it);
@@ -194,7 +181,7 @@ if ($c['confirmCustomer']) {
     send_mail(
         $customer['email'],
         "Ihre Buchungsanfrage bei SINGLEWANDERN® ({$booking['id']})",
-        "Guten Tag {$customer['name']},\n\nvielen Dank für Ihre Anfrage. Wir haben die gewählten Termine bis zum " . hold_until($booking) . " für Sie vorgemerkt und melden uns vorher mit der Auftragsbestätigung.\n\n$text\n\nVielen Dank.\nIhr SINGLEWANDERN® Team",
+        "Guten Tag {$customer['name']},\n\nvielen Dank für Ihre Anfrage. Wir haben die gewählten Termine bis zum " . hold_until($booking) . " für Sie vorgemerkt und melden uns vorher mit der Auftragsbestätigung.\n\n$text\n\n" . upload_hint($booking) . "Vielen Dank.\nIhr SINGLEWANDERN® Team",
         $c['bookingEmail']
     );
 }

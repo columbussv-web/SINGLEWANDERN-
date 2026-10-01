@@ -12,7 +12,9 @@ Buchungsseite für die Werbeformen laut Mediadaten 2025/2026. Läuft auf jedem P
 - Banner-Upload mit Prüfung auf Dateityp, 150 KB und Pixelmaß, im Browser und auf dem Server
 - Live-Preisrechner, Server rechnet jeden Preis selbst nach
 - Mail an Mediaberatung und Kopie an den Kunden
-- Adminbereich unter `/admin/`: Newsletter-Belegung, Sidebar-Auslastung, Bannervorschau, PDF-Vorschau, erneuter Versand. Status angefragt, bestätigt, abgelaufen, storniert. Stornierte und abgelaufene Termine sind sofort wieder buchbar. Reaktivieren klappt nur, solange die Termine noch frei sind.
+- Banner nachreichen: persönlicher Link je Buchung (Eingangsmail, Auftragsbestätigung, PDF). Kunden laden fehlende Banner hoch oder ersetzen vorhandene, die Mediaberatung bekommt bei jedem Eingang eine Mail.
+- Versandübersicht: 2 Tage vor jeder gebuchten Newsletter-Ausgabe eine Mail mit Partner, Status, Ziel-URL inklusive UTM, ALT-Text und Banner im Anhang. Fehlt das Banner, stehen Kontakt und Upload-Link darin.
+- Adminbereich unter `/admin/`: nächste Newsletter-Ausgaben, Newsletter-Belegung, Sidebar-Auslastung, Bannervorschau, PDF-Vorschau, erneuter Versand. Status angefragt, bestätigt, abgelaufen, storniert. Stornierte und abgelaufene Termine sind sofort wieder buchbar. Reaktivieren klappt nur, solange die Termine noch frei sind.
 
 ## Dateien
 | Pfad | Zweck |
@@ -24,6 +26,8 @@ Buchungsseite für die Werbeformen laut Mediadaten 2025/2026. Läuft auf jedem P
 | `api/config.php` | Standardeinstellungen |
 | `api/confirmation.php`, `api/pdf.php` | Auftragsbestätigung, PDF-Generator ohne externe Bibliothek |
 | `admin/index.php` | Verwaltung |
+| `banner/index.php` | Kundenseite zum Nachreichen der Banner |
+| `api/digest.php`, `api/cron.php` | Versandübersicht vor jeder Ausgabe |
 | `storage/` | Buchungen (`bookings.json`) und Banner, per `.htaccess` gesperrt |
 
 ## Einrichtung auf IONOS
@@ -36,6 +40,8 @@ Buchungsseite für die Werbeformen laut Mediadaten 2025/2026. Läuft auf jedem P
        'mailFrom' => 'noreply@singlewandern.de',
        'adminPasswordHash' => '…',
        'adminUrl' => 'https://www.singlewandern.de/werbung/admin/',
+       'siteUrl' => 'https://www.singlewandern.de/werbung/',
+       'cronKey' => '…',   // php -r 'echo bin2hex(random_bytes(16)), "\n";'
        'company' => [
            'name' => 'SINGLEWANDERN®',
            'lines' => ['Straße Nr.', 'PLZ Ort'],
@@ -49,7 +55,11 @@ Buchungsseite für die Werbeformen laut Mediadaten 2025/2026. Läuft auf jedem P
    Den Hash erzeugen: `php -r 'echo password_hash("IhrPasswort", PASSWORD_DEFAULT), "\n";'`
 3. Schreibrechte für `storage/` prüfen.
 4. Empfohlen: `storageDir` auf einen Ordner außerhalb des Webroots setzen.
-5. Testbuchung abschicken, Mails und Adminbereich prüfen, Testbuchung stornieren.
+5. Zeitgeber für die Versandübersicht einrichten, eine der beiden Varianten:
+   - IONOS-Cronjob (je nach Tarif): stündlich `php /pfad/zu/werbung/api/cron.php`
+   - Externer Dienst wie cron-job.org: stündlich `https://www.singlewandern.de/werbung/api/cron.php?key=IHR_CRONKEY`
+   Ohne Zeitgeber läuft der Versand nur bei Seitenaufrufen und kann sich dann verspäten.
+6. Testbuchung abschicken, Mails und Adminbereich prüfen, Testbuchung stornieren.
 
 ## Preise ändern
 Nur `assets/pricing.json` bearbeiten. Dort stehen auch Vormerkfrist (`holdDays`) und Sidebar-Plätze (`slots`). Preiskarten, Formular, Rechner und Server übernehmen die Werte automatisch.

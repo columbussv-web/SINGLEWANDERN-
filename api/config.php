@@ -13,6 +13,12 @@ $config = [
     // Ablage für Buchungen und Banner, per .htaccess vor Webzugriff geschützt
     'storageDir' => __DIR__ . '/../storage',
     'pricingFile' => __DIR__ . '/../assets/pricing.json',
+    // Öffentliche Adresse der Buchungsseite, Basis für Upload-Links
+    'siteUrl' => 'https://www.singlewandern.de/werbung/',
+    // Tage vor einer Newsletter-Ausgabe, an denen die Versandübersicht kommt
+    'digestDaysBefore' => 2,
+    // Schlüssel für api/cron.php, z. B. bin2hex(random_bytes(16)). Leer = nur per Kommandozeile
+    'cronKey' => '',
     // Absolute URL zum Adminbereich für den Link in der Benachrichtigung
     'adminUrl' => 'https://www.singlewandern.de/werbung/admin/',
     // Absender auf der PDF-Auftragsbestätigung

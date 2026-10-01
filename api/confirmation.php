@@ -180,7 +180,9 @@ function confirmation_pdf(array $b): string
     $missing = array_filter($b['items'], fn($it) => empty($it['file']));
     $hints = [];
     if ($missing) {
-        $hints[] = 'Bitte senden Sie die fehlenden Banner rechtzeitig vor dem ersten Termin an ' . config()['bookingEmail'] . '.';
+        $hints[] = 'Bitte laden Sie die fehlenden Banner rechtzeitig vor dem ersten Termin über Ihren persönlichen Link hoch: ' . upload_url($b);
+    } elseif (!empty($b['uploadToken'])) {
+        $hints[] = 'Banner ansehen oder ersetzen: ' . upload_url($b);
     }
     $hints[] = 'Technische Vorgaben: JPG oder PNG, max. 150 KB, 72 dpi, keine Schrift kleiner als 18 px im Bild.';
     $hints[] = config()['paymentTerms'];
@@ -203,7 +205,7 @@ function send_confirmation(array $b): bool
     file_put_contents(storage_path('confirmations/' . $b['id'] . '.pdf'), $pdf);
 
     $text = "Guten Tag {$b['customer']['name']},\n\nvielen Dank für Ihren Auftrag. Anbei erhalten Sie die Auftragsbestätigung {$b['id']} als PDF.\n\n" .
-        booking_text($b) . "\n\nBei Fragen antworten Sie einfach auf diese Mail.\n\nVielen Dank.\nIhr SINGLEWANDERN® Team";
+        booking_text($b) . "\n\n" . upload_hint($b) . "Bei Fragen antworten Sie einfach auf diese Mail.\n\nVielen Dank.\nIhr SINGLEWANDERN® Team";
     $ok = send_mail($b['customer']['email'], "Auftragsbestätigung {$b['id']} – SINGLEWANDERN®", $text, $c['bookingEmail'], [$file => $pdf]);
     send_mail($c['bookingEmail'], "Kopie: Auftragsbestätigung {$b['id']} an {$b['customer']['company']}", $text, null, [$file => $pdf]);
     return $ok;

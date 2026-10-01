@@ -32,7 +32,24 @@ function json_out(array $data, int $status = 200): never
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    // Antwort sofort ausliefern, nachgelagerte Aufgaben laufen danach
+    if (function_exists('fastcgi_finish_request')) {
+        fastcgi_finish_request();
+    }
     exit;
+}
+
+/** Rückfallebene ohne Cronjob: Versandübersicht höchstens einmal pro Stunde bei Seitenaufrufen. */
+function digest_on_shutdown(): void
+{
+    $f = storage_path('digest.json');
+    if (is_file($f) && filemtime($f) > time() - 3600) {
+        return;
+    }
+    register_shutdown_function(function () {
+        require_once __DIR__ . '/digest.php';
+        run_digest();
+    });
 }
 
 /**
@@ -323,3 +340,51 @@ function booking_text(array $b): string
     }
     return implode("\n", $o);
 }
+
+/**
+ * Prüft einen hochgeladenen Banner.
+ * Rückgabe: [] wenn keine Datei, ['error' => …] oder Metadaten für store_upload().
+ */
+function check_upload(?array $f, string $label): array
+{
+    if (!$f || $f['error'] === UPLOAD_ERR_NO_FILE) {
+        return [];
+    }
+    $max = pricing()['uploadMaxBytes'];
+    if ($f['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name'])) {
+        return ['error' => "Upload für $label fehlgeschlagen."];
+    }
+    if ($f['size'] > $max) {
+        return ['error' => "Banner für $label ist größer als " . round($max / 1024) . ' KB.'];
+    }
+    $mime = (new finfo(FILEINFO_MIME_TYPE))->file($f['tmp_name']);
+    $size = @getimagesize($f['tmp_name']);
+    $ext = ['image/jpeg' => 'jpg', 'image/png' => 'png'][$mime] ?? null;
+    if (!$ext || !$size) {
+        return ['error' => "Banner für $label muss JPG oder PNG sein."];
+    }
+    return ['tmp' => $f['tmp_name'], 'ext' => $ext, 'original' => mb_substr(basename($f['name']), 0, 120), 'w' => $size[0], 'h' => $size[1]];
+}
+
+function store_upload(string $bookingId, string $key, array $u): array
+{
+    $stored = $bookingId . '-' . $key . '-' . bin2hex(random_bytes(4)) . '.' . $u['ext'];
+    move_uploaded_file($u['tmp'], storage_path('uploads/' . $stored));
+    return ['stored' => $stored, 'original' => $u['original'], 'w' => $u['w'], 'h' => $u['h'], 'uploaded' => date('c')];
+}
+
+/** Persönlicher Link zum Nachreichen und Ersetzen der Banner. */
+function upload_url(array $b): string
+{
+    return rtrim(config()['siteUrl'], '/') . '/banner/?b=' . rawurlencode($b['id']) . '&t=' . $b['uploadToken'];
+}
+
+function upload_hint(array $b): string
+{
+    if (!$b['items'] || empty($b['uploadToken'])) {
+        return '';
+    }
+    $missing = array_filter($b['items'], fn($it) => empty($it['file']));
+    return ($missing ? 'Banner nachreichen' : 'Banner ansehen oder ersetzen') . ":\n" . upload_url($b) . "\n\n";
+}
+

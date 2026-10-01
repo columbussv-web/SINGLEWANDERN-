@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/../api/confirmation.php';
+require __DIR__ . '/../api/digest.php';
 
 session_set_cookie_params(['httponly' => true, 'samesite' => 'Strict', 'secure' => !empty($_SERVER['HTTPS'])]);
 session_start();
@@ -94,6 +95,7 @@ if ($authed && isset($_POST['id']) && $csrfOk()) {
                 }
                 if ($status === 'bestaetigt') {
                     $b['confirmedAt'] = date('c');
+                    $b['uploadToken'] ??= bin2hex(random_bytes(16));
                     $result['booking'] = $b;
                 }
                 $all[$i] = $b;
@@ -124,6 +126,8 @@ if ($filter !== '') {
 }
 [$taken, $used] = $authed ? with_bookings(fn(array $b) => [taken_dates($b), sidebar_usage($b)]) : [[], []];
 $slots = pricing()['products']['sidebar']['slots'];
+$upcoming = $authed ? upcoming_issues(with_bookings(fn(array $b) => $b), 6) : [];
+$digestSent = is_file(storage_path('digest.json')) ? (json_decode((string) file_get_contents(storage_path('digest.json')), true) ?: []) : [];
 $actions = ['bestaetigt' => 'Bestätigen und PDF senden', 'angefragt' => 'Zurück auf angefragt', 'storniert' => 'Stornieren'];
 ?>
 <!doctype html>
@@ -157,6 +161,10 @@ $actions = ['bestaetigt' => 'Bestätigen und PDF senden', 'angefragt' => 'Zurüc
   .login { max-width: 360px; margin: 80px auto; }
   .flash { background: var(--accent-soft); border-left: 4px solid var(--accent); padding: 10px 14px; border-radius: 8px; }
   .badge.abgelaufen { color: var(--warm); }
+  .next { width: 100%; border-collapse: collapse; margin-bottom: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .next td { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: .92rem; }
+  .next .warn { color: var(--warm); font-weight: 600; }
+  @media (max-width: 640px) { .next td { display: block; border: 0; padding: 4px 14px; } .next tr { display: block; border-bottom: 1px solid var(--line); padding: 8px 0; } }
 </style>
 </head>
 <body>
@@ -172,6 +180,23 @@ $actions = ['bestaetigt' => 'Bestätigen und PDF senden', 'angefragt' => 'Zurüc
 <?php else: ?>
   <div class="bk-head"><h2>Buchungsanfragen</h2><a href="?logout=1">Abmelden</a></div>
   <?php if ($flash): ?><p class="flash"><?= $h($flash) ?></p><?php endif ?>
+
+  <h3>Nächste Newsletter-Ausgaben</h3>
+  <table class="next">
+    <?php foreach ($upcoming as $i): $b = $i['booking']; $it = $i['item']; ?>
+      <tr>
+        <td><strong><?= $h(de_date($i['date'])) ?></strong></td>
+        <?php if (!$b): ?>
+          <td colspan="3" class="muted">kein Partner gebucht</td>
+        <?php else: ?>
+          <td><?= $h($b['customer']['company']) ?> <span class="muted small"><?= $h($b['id']) ?></span></td>
+          <td><span class="badge <?= $h($b['status']) ?>"><?= $h($labels[$b['status']]) ?></span></td>
+          <td><?php if (!empty($it['file'])): ?><a href="?file=<?= $h(urlencode($it['file']['stored'])) ?>" target="_blank">Banner liegt vor</a><?php else: ?><span class="warn">Banner fehlt</span><?php endif ?>
+            <?php if (isset($digestSent[$i['date']])): ?><span class="muted small"> · Übersicht gesendet</span><?php endif ?></td>
+        <?php endif ?>
+      </tr>
+    <?php endforeach ?>
+  </table>
 
   <h3>Newsletter-Belegung</h3>
   <div class="cal">
