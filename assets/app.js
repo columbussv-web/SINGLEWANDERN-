@@ -18,6 +18,7 @@
   let P;                       // Preise aus pricing.json
   let apiOnline = false;       // Backend erreichbar
   let issues = [];             // [{date, status}]
+  let sidebarFree = null;      // {"2026-11": 2, …} freie Plätze je Monat
   const picked = new Set();    // gewählte Newsletter-Ausgaben
   const fileState = {};        // Prüfergebnis je Upload
 
@@ -38,6 +39,38 @@
     const from = new Date(y, m - 1, 1), to = new Date(y, m - 2 + months, 1);
     return months === 1 ? monthFmt.format(from) : `${monthFmt.format(from)} bis ${monthFmt.format(to)}`;
   }
+  function monthList() {
+    const out = [], d = new Date(); d.setDate(1);
+    for (let i = 0; i <= P.products.sidebar.horizonMonths; i++) {
+      out.push(toISO(d).slice(0, 7));
+      d.setMonth(d.getMonth() + 1);
+    }
+    return out;
+  }
+  function monthsFrom(start, n) {
+    const [y, m] = start.split("-").map(Number), out = [];
+    for (let i = 0; i < n; i++) out.push(toISO(new Date(y, m - 1 + i, 1)).slice(0, 7));
+    return out;
+  }
+  const freeIn = (m) => (sidebarFree ? sidebarFree[m] ?? 0 : P.products.sidebar.slots);
+  // Monate der gewählten Laufzeit ohne freien Platz
+  function sidebarBlocked() {
+    const start = form.elements.sidebar_start.value;
+    return start ? monthsFrom(start, sidebarQty()).filter((m) => freeIn(m) < 1) : [];
+  }
+  function fillSidebarMonths() {
+    const sel = form.elements.sidebar_start, keep = sel.value || nextMonth(), slots = P.products.sidebar.slots;
+    sel.innerHTML = "";
+    monthList().forEach((m) => {
+      const f = freeIn(m);
+      const o = new Option(`${monthFmt.format(parseISO(m + "-01"))} · ${f ? `${f} von ${slots} frei` : "ausgebucht"}`, m);
+      o.disabled = !f;
+      sel.add(o);
+    });
+    const firstFree = [...sel.options].find((o) => !o.disabled && o.value >= nextMonth());
+    sel.value = [...sel.options].some((o) => o.value === keep && !o.disabled) ? keep : (firstFree ? firstFree.value : keep);
+  }
+
   function sidebarQty() {
     const input = form.elements.sidebar_qty;
     let v = parseInt(input.value, 10);
@@ -109,8 +142,8 @@
       b.addEventListener("click", () => { form.elements.sidebar_qty.value = n; render(); });
       presets.append(b);
     });
-    form.elements.sidebar_start.min = toISO(new Date()).slice(0, 7);
-    form.elements.sidebar_start.value = nextMonth();
+    fillSidebarMonths();
+    document.querySelectorAll("[data-hold]").forEach((n) => (n.textContent = P.holdDays));
 
     const box = $("#request-products");
     for (const [key, r] of Object.entries(P.requestProducts)) {
@@ -182,12 +215,16 @@
     try {
       const res = await fetch(API + "availability.php", { cache: "no-store" });
       if (!res.ok) throw new Error(res.status);
-      issues = (await res.json()).newsletter;
+      const json = await res.json();
+      issues = json.newsletter;
+      sidebarFree = json.sidebar.free;
       apiOnline = true;
     } catch (_) {
       issues = localIssues();
+      sidebarFree = null;
       apiOnline = false;
     }
+    fillSidebarMonths();
     // vergebene Termine aus der Auswahl entfernen
     const free = new Set(issues.filter((i) => i.status === "frei").map((i) => i.date));
     [...picked].forEach((d) => free.has(d) || picked.delete(d));
@@ -278,7 +315,12 @@
     const q = sidebarQty();
     document.querySelectorAll('.presets[data-for="sidebar_qty"] button').forEach((b) => b.classList.toggle("active", Number(b.dataset.value) === q));
     const period = sidebarPeriod(form.elements.sidebar_start.value, q);
-    $('[data-out="sidebar_period"]').textContent = period ? "Laufzeit: " + period : "";
+    const blocked = sidebarBlocked();
+    const out = $('[data-out="sidebar_period"]');
+    out.textContent = blocked.length
+      ? `Ausgebucht im ${blocked.map((m) => monthFmt.format(parseISO(m + "-01"))).join(", ")}. Bitte Startmonat oder Laufzeit ändern.`
+      : period ? "Laufzeit: " + period : "";
+    out.classList.toggle("bad", blocked.length > 0);
     $("#nl-count").textContent = `${picked.size} gewählt`;
     form.elements.newsletter_dates.value = [...picked].sort().join(",");
 
@@ -363,6 +405,11 @@
       $("#booking fieldset").scrollIntoView({ behavior: "smooth" });
       return;
     }
+    if (isOn("sidebar") && sidebarBlocked().length) {
+      err.textContent = "Der Sidebar-Banner ist in einem Monat Ihrer Laufzeit ausgebucht.";
+      $('[data-out="sidebar_period"]').scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     const badFile = Object.entries(fileState).find(([k, v]) => v.error && isOn(k));
     if (badFile) {
       err.textContent = `Banner ${P.products[badFile[0]].short}: ${badFile[1].error}`;
@@ -396,7 +443,7 @@
           }
           return;
         }
-        text = `Ihre Anfragenummer lautet ${json.id}. ` + (s.items.some((i) => i.key === "newsletter") ? "Ihre Newsletter-Ausgaben sind vorgemerkt. " : "") + "Sie erhalten eine Kopie per E-Mail.";
+        text = `Ihre Anfragenummer lautet ${json.id}. ` + (s.items.length ? `Ihre Termine sind bis ${json.holdUntil} vorgemerkt. ` : "") + "Sie erhalten eine Kopie per E-Mail.";
       } catch (_) {
         err.textContent = `Verbindung fehlgeschlagen. Bitte versuchen Sie es erneut oder schreiben Sie an ${bookingEmail}.`;
         return;
@@ -420,10 +467,10 @@
 
   function reset() {
     form.reset();
+    form.elements.sidebar_start.value = nextMonth();
     picked.clear();
     Object.keys(fileState).forEach((k) => delete fileState[k]);
     document.querySelectorAll(".file-check").forEach((n) => { n.textContent = ""; n.className = "file-check small"; });
-    form.elements.sidebar_start.value = nextMonth();
     form.hidden = false;
     $("#success").hidden = true;
     loadIssues();

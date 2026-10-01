@@ -66,7 +66,8 @@ foreach ($P['products'] as $key => $p) {
     } else {
         $qty = (int) ($_POST[$key . '_qty'] ?? 0);
         $start = $in($key . '_start', 7);
-        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $start) || $start < date('Y-m')) {
+        $latest = (new DateTimeImmutable('first day of this month'))->modify('+' . $p['horizonMonths'] . ' months')->format('Y-m');
+        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $start) || $start < date('Y-m') || $start > $latest) {
             $errors[] = 'Startmonat ist ungültig.';
         }
         $item['start'] = $start;
@@ -154,17 +155,10 @@ $booking = [
 ];
 
 // Belegung unter Sperre prüfen und Buchung speichern
-$conflicts = [];
+$conflicts = ['dates' => [], 'months' => []];
 with_bookings(function (array $all) use (&$booking, &$conflicts, $uploads) {
-    $taken = taken_dates($all);
-    foreach ($booking['items'] as $it) {
-        foreach ($it['dates'] ?? [] as $d) {
-            if (isset($taken[$d])) {
-                $conflicts[] = $d;
-            }
-        }
-    }
-    if ($conflicts) {
+    $conflicts = booking_conflicts($booking, $all);
+    if ($conflicts['dates'] || $conflicts['months']) {
         return null;
     }
     foreach ($booking['items'] as &$it) {
@@ -180,10 +174,11 @@ with_bookings(function (array $all) use (&$booking, &$conflicts, $uploads) {
     return $all;
 }, true);
 
-if ($conflicts) {
+if ($conflicts['dates'] || $conflicts['months']) {
     json_out([
-        'error' => 'Diese Ausgaben wurden gerade vergeben: ' . implode(', ', array_map('de_date', $conflicts)) . '. Bitte wählen Sie andere Termine.',
-        'conflicts' => $conflicts,
+        'error' => conflict_message($conflicts) . ' Bitte wählen Sie andere Termine.',
+        'conflicts' => $conflicts['dates'],
+        'months' => $conflicts['months'],
     ], 409);
 }
 
@@ -199,9 +194,9 @@ if ($c['confirmCustomer']) {
     send_mail(
         $customer['email'],
         "Ihre Buchungsanfrage bei SINGLEWANDERN® ({$booking['id']})",
-        "Guten Tag {$customer['name']},\n\nvielen Dank für Ihre Anfrage. Wir haben die gewählten Termine für Sie vorgemerkt und melden uns mit der Bestätigung.\n\n$text\n\nVielen Dank.\nIhr SINGLEWANDERN® Team",
+        "Guten Tag {$customer['name']},\n\nvielen Dank für Ihre Anfrage. Wir haben die gewählten Termine bis zum " . hold_until($booking) . " für Sie vorgemerkt und melden uns vorher mit der Auftragsbestätigung.\n\n$text\n\nVielen Dank.\nIhr SINGLEWANDERN® Team",
         $c['bookingEmail']
     );
 }
 
-json_out(['ok' => true, 'id' => $booking['id']]);
+json_out(['ok' => true, 'id' => $booking['id'], 'holdUntil' => hold_until($booking)]);

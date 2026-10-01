@@ -15,6 +15,15 @@ $config = [
     'pricingFile' => __DIR__ . '/../assets/pricing.json',
     // Absolute URL zum Adminbereich für den Link in der Benachrichtigung
     'adminUrl' => 'https://www.singlewandern.de/werbung/admin/',
+    // Absender auf der PDF-Auftragsbestätigung
+    'company' => [
+        'name' => 'SINGLEWANDERN®',
+        'lines' => [],          // z. B. ['Musterstraße 1', '12345 Musterstadt']
+        'email' => 'werbung@singlewandern.de',
+        'web' => 'www.singlewandern.de',
+        'vatId' => '',
+    ],
+    'paymentTerms' => 'Die Rechnung erhalten Sie gesondert.',
     // Mails nicht versenden, sondern in storage/mail.log schreiben (Test)
     'mailToLog' => false,
 ];

@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-require __DIR__ . '/../api/lib.php';
+require __DIR__ . '/../api/confirmation.php';
 
 session_set_cookie_params(['httponly' => true, 'samesite' => 'Strict', 'secure' => !empty($_SERVER['HTTPS'])]);
 session_start();
@@ -48,32 +48,83 @@ if ($authed && isset($_GET['file'])) {
     exit;
 }
 
-// Statuswechsel
-if ($authed && isset($_POST['id'], $_POST['status']) && $csrfOk()) {
+// Auftragsbestätigung als PDF ansehen
+if ($authed && isset($_GET['pdf'])) {
+    $id = (string) $_GET['pdf'];
+    $b = with_bookings(fn(array $all) => array_values(array_filter($all, fn($x) => $x['id'] === $id))[0] ?? null);
+    if (!$b) {
+        http_response_code(404);
+        exit('Buchung nicht gefunden.');
+    }
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: inline; filename="Auftragsbestaetigung-' . $b['id'] . '.pdf"');
+    echo confirmation_pdf($b);
+    exit;
+}
+
+// Statuswechsel und erneuter Versand
+if ($authed && isset($_POST['id']) && $csrfOk()) {
     $id = (string) $_POST['id'];
-    $status = (string) $_POST['status'];
-    if (in_array($status, ['angefragt', 'bestaetigt', 'storniert'], true)) {
-        with_bookings(function (array $all) use ($id, $status) {
-            foreach ($all as &$b) {
-                if ($b['id'] === $id) {
-                    $b['status'] = $status;
-                    $b['updated'] = date('c');
+    $status = (string) ($_POST['status'] ?? '');
+    $resend = isset($_POST['resend']);
+    $result = ['msg' => '', 'booking' => null];
+    if ($resend || in_array($status, ['angefragt', 'bestaetigt', 'storniert'], true)) {
+        // Rückgabe null = nichts speichern, Ergebnis über $result
+        with_bookings(function (array $all) use ($id, $status, $resend, &$result) {
+            foreach ($all as $i => $b) {
+                if ($b['id'] !== $id) {
+                    continue;
                 }
+                if ($resend) {
+                    $result['booking'] = $b;
+                    return null;
+                }
+                // Reaktivieren nur, wenn Termine und Sidebar-Plätze noch frei sind
+                if (!is_active($b) && $status !== 'storniert') {
+                    $c = booking_conflicts($b, $all);
+                    if ($c['dates'] || $c['months']) {
+                        $result['msg'] = "{$b['id']} lässt sich nicht reaktivieren. " . conflict_message($c);
+                        return null;
+                    }
+                }
+                $b['status'] = $status;
+                $b['updated'] = date('c');
+                if ($status === 'angefragt') {
+                    $b['heldSince'] = date('c');
+                }
+                if ($status === 'bestaetigt') {
+                    $b['confirmedAt'] = date('c');
+                    $result['booking'] = $b;
+                }
+                $all[$i] = $b;
+                return $all;
             }
-            return $all;
+            $result['msg'] = 'Buchung nicht gefunden.';
+            return null;
         }, true);
     }
+    if ($result['booking']) {
+        $ok = send_confirmation($result['booking']);
+        $result['msg'] = $ok
+            ? "Auftragsbestätigung {$result['booking']['id']} an {$result['booking']['customer']['email']} gesendet."
+            : "Status gespeichert, aber der Mailversand ist fehlgeschlagen. PDF bitte manuell senden.";
+    }
+    $_SESSION['flash'] = $result['msg'];
     header('Location: ./?f=' . urlencode((string) ($_GET['f'] ?? '')));
     exit;
 }
 
-$labels = ['angefragt' => 'Angefragt', 'bestaetigt' => 'Bestätigt', 'storniert' => 'Storniert'];
+$flash = $_SESSION['flash'] ?? '';
+unset($_SESSION['flash']);
+$labels = ['angefragt' => 'Angefragt', 'bestaetigt' => 'Bestätigt', 'abgelaufen' => 'Abgelaufen', 'storniert' => 'Storniert'];
 $filter = (string) ($_GET['f'] ?? '');
 $bookings = $authed ? array_reverse(with_bookings(fn(array $b) => $b)) : [];
 if ($filter !== '') {
     $bookings = array_values(array_filter($bookings, fn($b) => $b['status'] === $filter));
 }
-$taken = $authed ? with_bookings(fn(array $b) => taken_dates($b)) : [];
+[$taken, $used] = $authed ? with_bookings(fn(array $b) => [taken_dates($b), sidebar_usage($b)]) : [[], []];
+$slots = pricing()['products']['sidebar']['slots'];
+$actions = ['bestaetigt' => 'Bestätigen und PDF senden', 'angefragt' => 'Zurück auf angefragt', 'storniert' => 'Stornieren'];
 ?>
 <!doctype html>
 <html lang="de">
@@ -104,6 +155,8 @@ $taken = $authed ? with_bookings(fn(array $b) => taken_dates($b)) : [];
   .cal .angefragt { background: var(--accent-soft); }
   .cal .bestaetigt { background: var(--accent); color: var(--accent-ink); }
   .login { max-width: 360px; margin: 80px auto; }
+  .flash { background: var(--accent-soft); border-left: 4px solid var(--accent); padding: 10px 14px; border-radius: 8px; }
+  .badge.abgelaufen { color: var(--warm); }
 </style>
 </head>
 <body>
@@ -118,12 +171,20 @@ $taken = $authed ? with_bookings(fn(array $b) => taken_dates($b)) : [];
   </form>
 <?php else: ?>
   <div class="bk-head"><h2>Buchungsanfragen</h2><a href="?logout=1">Abmelden</a></div>
+  <?php if ($flash): ?><p class="flash"><?= $h($flash) ?></p><?php endif ?>
 
   <h3>Newsletter-Belegung</h3>
   <div class="cal">
     <?php foreach (newsletter_dates() as $d): ?>
       <span class="<?= $h($taken[$d] ?? '') ?>" title="<?= $h($labels[$taken[$d] ?? ''] ?? 'Frei') ?>"><?= $h(de_date($d)) ?></span>
     <?php endforeach ?>
+  </div>
+
+  <h3>Sidebar-Auslastung (<?= (int) $slots ?> Plätze pro Monat)</h3>
+  <div class="cal">
+    <?php for ($i = 0; $i < 12; $i++): $m = (new DateTimeImmutable('first day of this month'))->modify("+$i months")->format('Y-m'); $u = $used[$m] ?? 0; ?>
+      <span class="<?= $u >= $slots ? 'bestaetigt' : ($u ? 'angefragt' : '') ?>"><?= $h(de_month($m)) ?>: <?= $u ?>/<?= (int) $slots ?></span>
+    <?php endfor ?>
   </div>
 
   <nav class="filter">
@@ -140,6 +201,7 @@ $taken = $authed ? with_bookings(fn(array $b) => taken_dates($b)) : [];
         <strong><?= $h($b['customer']['company']) ?> · <?= $h($b['id']) ?></strong>
         <span class="badge <?= $h($b['status']) ?>"><?= $h($labels[$b['status']]) ?></span>
       </div>
+      <?php if ($b['status'] === 'angefragt'): ?><p class="muted small">Vorgemerkt bis <?= $h(hold_until($b)) ?>, danach automatisch abgelaufen.</p><?php endif ?>
       <pre><?= $h(booking_text($b)) ?></pre>
       <div class="thumbs">
         <?php foreach ($b['items'] as $it): if (empty($it['file'])) continue; $f = $it['file']['stored']; ?>
@@ -147,14 +209,25 @@ $taken = $authed ? with_bookings(fn(array $b) => taken_dates($b)) : [];
         <?php endforeach ?>
       </div>
       <div class="actions" style="margin-top:14px">
-        <?php foreach ($labels as $k => $l): if ($k === $b['status']) continue; ?>
-          <form method="post" action="?f=<?= $h($filter) ?>">
+        <?php foreach ($actions as $k => $l): if ($k === $b['status']) continue; ?>
+          <form method="post" action="?f=<?= $h($filter) ?>"<?= $k === 'storniert' ? ' onsubmit="return confirm(\'Buchung wirklich stornieren?\')"' : '' ?>>
             <input type="hidden" name="csrf" value="<?= $h($_SESSION['csrf']) ?>">
             <input type="hidden" name="id" value="<?= $h($b['id']) ?>">
             <input type="hidden" name="status" value="<?= $k ?>">
-            <button class="btn btn-small <?= $k === 'bestaetigt' ? '' : 'btn-ghost' ?>"><?= $k === 'angefragt' ? 'Zurück auf angefragt' : $l ?></button>
+            <button class="btn btn-small <?= $k === 'bestaetigt' ? '' : 'btn-ghost' ?>"><?= $h($l) ?></button>
           </form>
         <?php endforeach ?>
+        <?php if ($b['items']): ?>
+          <a class="btn btn-small btn-ghost" href="?pdf=<?= $h(urlencode($b['id'])) ?>" target="_blank">PDF ansehen</a>
+        <?php endif ?>
+        <?php if ($b['status'] === 'bestaetigt'): ?>
+          <form method="post" action="?f=<?= $h($filter) ?>">
+            <input type="hidden" name="csrf" value="<?= $h($_SESSION['csrf']) ?>">
+            <input type="hidden" name="id" value="<?= $h($b['id']) ?>">
+            <input type="hidden" name="resend" value="1">
+            <button class="btn btn-small btn-ghost">Bestätigung erneut senden</button>
+          </form>
+        <?php endif ?>
         <a class="btn btn-small btn-ghost" href="mailto:<?= $h($b['customer']['email']) ?>?subject=<?= $h(rawurlencode('Ihre Buchung ' . $b['id'])) ?>">Kunde anschreiben</a>
       </div>
     </article>

@@ -18,7 +18,7 @@ function pricing(): array
 function storage_path(string $rel = ''): string
 {
     $dir = rtrim(config()['storageDir'], '/');
-    foreach ([$dir, "$dir/uploads"] as $d) {
+    foreach ([$dir, "$dir/uploads", "$dir/confirmations"] as $d) {
         if (!is_dir($d)) {
             mkdir($d, 0750, true);
         }
@@ -37,24 +37,68 @@ function json_out(array $data, int $status = 200): never
 
 /**
  * Liest und schreibt die Buchungsdatei unter exklusiver Sperre.
- * Gibt $fn ein Array zurück, wird das Ergebnis gespeichert.
+ * Abgelaufene Vormerkungen werden dabei jedes Mal ausgebucht.
+ * Gibt $fn bei $write ein Array zurück, wird das Ergebnis gespeichert.
  */
 function with_bookings(callable $fn, bool $write = false): mixed
 {
     $fh = fopen(storage_path('bookings.json'), 'c+');
-    flock($fh, $write ? LOCK_EX : LOCK_SH);
+    flock($fh, LOCK_EX);
     $raw = stream_get_contents($fh);
     $bookings = $raw ? json_decode($raw, true) : [];
+    $expired = expire_bookings($bookings);
     $result = $fn($bookings);
-    if ($write && is_array($result)) {
+    $save = $write && is_array($result) ? $result : ($expired ? $bookings : null);
+    if ($save !== null) {
         ftruncate($fh, 0);
         rewind($fh);
-        fwrite($fh, json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        fwrite($fh, json_encode($save, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         fflush($fh);
     }
     flock($fh, LOCK_UN);
     fclose($fh);
+    foreach ($expired as $b) {
+        notify_expired($b);
+    }
     return $result;
+}
+
+function is_active(array $b): bool
+{
+    return in_array($b['status'], ['angefragt', 'bestaetigt'], true);
+}
+
+/** Setzt unbestätigte Anfragen nach Ablauf der Vormerkfrist auf "abgelaufen". */
+function expire_bookings(array &$bookings): array
+{
+    $limit = new DateTimeImmutable('-' . (int) pricing()['holdDays'] . ' days');
+    $expired = [];
+    foreach ($bookings as &$b) {
+        if ($b['status'] === 'angefragt' && new DateTimeImmutable($b['heldSince'] ?? $b['created']) < $limit) {
+            $b['status'] = 'abgelaufen';
+            $b['updated'] = date('c');
+            $expired[] = $b;
+        }
+    }
+    unset($b);
+    return $expired;
+}
+
+function hold_until(array $b): string
+{
+    return (new DateTimeImmutable($b['heldSince'] ?? $b['created']))
+        ->modify('+' . (int) pricing()['holdDays'] . ' days')->format('d.m.Y');
+}
+
+function notify_expired(array $b): void
+{
+    $c = config();
+    $text = "Guten Tag {$b['customer']['name']},\n\nIhre Vormerkung {$b['id']} ist nach " . pricing()['holdDays'] .
+        " Tagen ohne Bestätigung abgelaufen. Die Termine sind wieder freigegeben.\n\n" .
+        "Wenn Sie weiterhin Interesse haben, antworten Sie einfach auf diese Mail oder stellen Sie eine neue Anfrage.\n\n" .
+        booking_text($b) . "\n\nVielen Dank.\nIhr SINGLEWANDERN® Team";
+    send_mail($b['customer']['email'], "Ihre Vormerkung {$b['id']} ist abgelaufen", $text, $c['bookingEmail']);
+    send_mail($c['bookingEmail'], "Vormerkung abgelaufen: {$b['id']} {$b['customer']['company']}", booking_text($b));
 }
 
 /** Alle buchbaren Newsletter-Ausgaben im Buchungsfenster. */
@@ -77,7 +121,7 @@ function taken_dates(array $bookings): array
 {
     $taken = [];
     foreach ($bookings as $b) {
-        if ($b['status'] === 'storniert') {
+        if (!is_active($b)) {
             continue;
         }
         foreach ($b['items'] as $it) {
@@ -87,6 +131,73 @@ function taken_dates(array $bookings): array
         }
     }
     return $taken;
+}
+
+/** Monate einer Sidebar-Laufzeit als Y-m. */
+function month_range(string $start, int $qty): array
+{
+    $d = new DateTimeImmutable($start . '-01');
+    $out = [];
+    for ($i = 0; $i < $qty; $i++) {
+        $out[] = $d->modify("+$i months")->format('Y-m');
+    }
+    return $out;
+}
+
+/** Belegte Sidebar-Plätze je Monat. */
+function sidebar_usage(array $bookings, ?string $exceptId = null): array
+{
+    $used = [];
+    foreach ($bookings as $b) {
+        if (!is_active($b) || $b['id'] === $exceptId) {
+            continue;
+        }
+        foreach ($b['items'] as $it) {
+            if ($it['key'] === 'sidebar') {
+                foreach (month_range($it['start'], $it['qty']) as $m) {
+                    $used[$m] = ($used[$m] ?? 0) + 1;
+                }
+            }
+        }
+    }
+    return $used;
+}
+
+/** Konflikte einer Buchung mit dem Bestand: belegte Ausgaben und volle Sidebar-Monate. */
+function booking_conflicts(array $booking, array $all): array
+{
+    $others = array_filter($all, fn($b) => $b['id'] !== $booking['id']);
+    $taken = taken_dates($others);
+    $used = sidebar_usage($others);
+    $slots = pricing()['products']['sidebar']['slots'];
+    $c = ['dates' => [], 'months' => []];
+    foreach ($booking['items'] as $it) {
+        foreach ($it['dates'] ?? [] as $d) {
+            if (isset($taken[$d])) {
+                $c['dates'][] = $d;
+            }
+        }
+        if ($it['key'] === 'sidebar') {
+            foreach (month_range($it['start'], $it['qty']) as $m) {
+                if (($used[$m] ?? 0) >= $slots) {
+                    $c['months'][] = $m;
+                }
+            }
+        }
+    }
+    return $c;
+}
+
+function conflict_message(array $c): string
+{
+    $parts = [];
+    if ($c['dates']) {
+        $parts[] = 'Newsletter-Ausgaben bereits vergeben: ' . implode(', ', array_map('de_date', $c['dates']));
+    }
+    if ($c['months']) {
+        $parts[] = 'Sidebar ausgebucht im ' . implode(', ', array_map('de_month', $c['months']));
+    }
+    return implode('. ', $parts) . '.';
 }
 
 function unit_price(array $product, int $qty): int
@@ -118,20 +229,36 @@ function de_month(string $ym, int $add = 0): string
     return $m[(int) $d->format('n') - 1] . ' ' . $d->format('Y');
 }
 
-function send_mail(string $to, string $subject, string $body, ?string $replyTo = null): bool
+/** Versendet eine Textmail, optional mit Anhängen [Dateiname => Inhalt]. */
+function send_mail(string $to, string $subject, string $body, ?string $replyTo = null, array $attachments = []): bool
 {
     $c = config();
     $headers = [
         'From: =?UTF-8?B?' . base64_encode('SINGLEWANDERN® Mediabuchung') . '?= <' . $c['mailFrom'] . '>',
-        'Content-Type: text/plain; charset=UTF-8',
-        'Content-Transfer-Encoding: 8bit',
+        'MIME-Version: 1.0',
     ];
     if ($replyTo) {
         $headers[] = 'Reply-To: ' . $replyTo;
     }
+    if ($attachments) {
+        $boundary = 'sw' . bin2hex(random_bytes(12));
+        $headers[] = "Content-Type: multipart/mixed; boundary=\"$boundary\"";
+        $parts = "--$boundary\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" .
+            chunk_split(base64_encode($body)) . "\r\n";
+        foreach ($attachments as $name => $data) {
+            $type = str_ends_with($name, '.pdf') ? 'application/pdf' : 'application/octet-stream';
+            $parts .= "--$boundary\r\nContent-Type: $type; name=\"$name\"\r\nContent-Transfer-Encoding: base64\r\n" .
+                "Content-Disposition: attachment; filename=\"$name\"\r\n\r\n" . chunk_split(base64_encode($data)) . "\r\n";
+        }
+        $body = $parts . "--$boundary--";
+    } else {
+        $headers[] = 'Content-Type: text/plain; charset=UTF-8';
+        $headers[] = 'Content-Transfer-Encoding: 8bit';
+    }
     $subject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
     if ($c['mailToLog']) {
-        file_put_contents(storage_path('mail.log'), "To: $to\n" . implode("\n", $headers) . "\nSubject: $subject\n\n$body\n-----\n", FILE_APPEND);
+        $log = $attachments ? '[Anhänge: ' . implode(', ', array_keys($attachments)) . ']' : $body;
+        file_put_contents(storage_path('mail.log'), "To: $to\n" . implode("\n", $headers) . "\nSubject: $subject\n\n$log\n-----\n", FILE_APPEND);
         return true;
     }
     return mail($to, $subject, $body, implode("\r\n", $headers));

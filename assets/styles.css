@@ -178,7 +178,7 @@ input[type=file]::file-selector-button { font: 600 .85rem Inter, sans-serif; bor
 .file-check:empty { display: none; }
 .file-check.ok { color: var(--accent); }
 .file-check.warn { color: var(--warm); }
-.file-check.bad { color: var(--error); }
+.file-check.bad, [data-out].bad { color: var(--error); }
 .line.combo { color: var(--accent); font-weight: 600; }
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
