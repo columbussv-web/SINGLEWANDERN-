@@ -35,6 +35,7 @@ Buchungsseite für die Werbeformen laut Mediadaten 2025/2026. Läuft auf jedem P
 | `api/config.local.example.php` | Vorlage für die eigene Konfiguration |
 | `partner/`, `assets/landing.json` | Landingpage und Branchentexte |
 | `mediadaten/`, `api/mediadaten.php` | Mediadaten als PDF |
+| `tools/angebot.php`, `tools/angebot-beispiel.json` | Einseitiges Angebot als PDF, Preise aus `pricing.json`. Kundenspezifische JSON-Dateien bleiben außerhalb der Versionierung |
 | `tools/build-release.sh` | Baut das Upload-Paket nach `dist/` |
 | `DEPLOY.md` | Checkliste für den Livegang |
 | `storage/` | Buchungen (`bookings.json`) und Banner, per `.htaccess` gesperrt |

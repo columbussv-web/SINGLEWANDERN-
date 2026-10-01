@@ -1,0 +1,45 @@
+{
+  "number": "SW-A-2026-XXX",
+  "validUntil": "31.10.2026",
+  "recipient": [
+    "Firma",
+    "z. Hd. Marketing",
+    "Straße Nr.",
+    "PLZ Ort"
+  ],
+  "subject": "Werbepartnerschaft 2027 mit SINGLEWANDERN®",
+  "salutation": "Guten Tag,",
+  "intro": "vielen Dank für das freundliche Gespräch. Wie besprochen erhalten Sie unser Angebot für eine Partnerschaft im Jahr 2027. Unsere Community wandert jedes Wochenende in geführten Gruppen, viele davon in Ihrer Region rund um Ruhrgebiet, Bergisches Land und Sauerland, und plant oft schon die nächste Wanderreise. Damit passt sie genau zu Ihren Reisen für Singles und Alleinreisende.",
+  "packages": [
+    {
+      "name": "Einstieg",
+      "newsletter": 6,
+      "sidebar": 3,
+      "note": "Für einen Test im ersten Quartal."
+    },
+    {
+      "name": "Saison",
+      "newsletter": 12,
+      "sidebar": 6,
+      "recommended": true,
+      "note": "Begleitet Ihre Buchungsphase von Januar bis Juni."
+    }
+  ],
+  "extras": [
+    {
+      "title": "Exklusiver Gutscheincode für unsere Community",
+      "price": "nach Vereinbarung",
+      "text": "Ein Vorteil nur für SINGLEWANDERN®-Teilnehmer, beworben im Newsletter. An den Einlösungen sehen Sie den Erfolg direkt. Abrechnung als Festpreis, Provision oder Kombination."
+    },
+    {
+      "title": "Vermittlung Ihrer Singlereisen",
+      "price": "gemäß Agenturprogramm",
+      "text": "Wir empfehlen ausgewählte Reisen aktiv an unsere Teilnehmer und vermitteln Buchungen zu den Konditionen Ihres Agenturprogramms. Für Sie entstehen Kosten nur bei einer Buchung."
+    }
+  ],
+  "nextSteps": [
+    "Sie wählen ein Paket. Die Termine stimmen wir mit Ihrer Katalog- und Buchungsplanung ab.",
+    "Sie erhalten die Auftragsbestätigung als PDF und laden Ihre Banner über Ihren persönlichen Link hoch.",
+    "Parallel klären wir die Bedingungen für die Vermittlung Ihrer Reisen."
+  ]
+}

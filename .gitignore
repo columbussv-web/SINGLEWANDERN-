@@ -3,3 +3,5 @@ storage/*
 api/config.local.php
 dist/
 akquise/
+tools/angebot-*.json
+!tools/angebot-beispiel.json
