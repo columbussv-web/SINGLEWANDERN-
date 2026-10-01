@@ -91,6 +91,33 @@
     return out;
   }
 
+  // ---------- Mediadaten ----------
+  function renderMedia() {
+    const m = P.media, num = new Intl.NumberFormat("de-DE");
+    const kpis = [
+      ["ca. " + num.format(m.subscribers), "Newsletter-Abonnentinnen und -Abonnenten"],
+      [P.products.newsletter.weekdays.length === 2 ? "Di und So" : m.sendsPerWeek + " × pro Woche", `Newsletter-Versand, ${m.sendsPerWeek} × pro Woche`],
+      ["bis " + m.openRate + " %", "Öffnungsrate"],
+      ["1 Partner", "exklusiver Werbeplatz pro Newsletter-Ausgabe"]
+    ];
+    const ul = $("#reichweite");
+    ul.innerHTML = "";
+    kpis.forEach(([v, l]) => { const li = el("li"); li.append(el("strong", {}, v), el("span", {}, l)); ul.append(li); });
+    const tags = $("#audience");
+    tags.innerHTML = "";
+    m.audience.forEach((a) => tags.append(el("span", {}, a)));
+    $("#credibility").textContent = `${m.credibility} Ideal für ${m.idealFor}`;
+    const specs = $("#specs");
+    specs.innerHTML = "";
+    Object.entries(m.specs).forEach(([title, lines]) => {
+      const box = el("div");
+      const list = el("ul", { className: "list" });
+      lines.forEach((l) => list.append(el("li", {}, l)));
+      box.append(el("h3", {}, title), list);
+      specs.append(box);
+    });
+  }
+
   // ---------- Preiskarten ----------
   function renderCards() {
     const box = $("#price-cards");
@@ -102,7 +129,7 @@
       card.append(price);
       const ul = el("ul", { className: "list" });
       const bullets = key === "newsletter"
-        ? ["Exklusiver Werbeplatz pro Ausgabe", "Versand dienstags und sonntags", "ca. 5.000 Empfänger, bis 45 % Öffnungsrate"]
+        ? ["Exklusiver Werbeplatz pro Ausgabe", "Versand dienstags und sonntags", `ca. ${new Intl.NumberFormat("de-DE").format(P.media.subscribers)} Empfänger, bis ${P.media.openRate} % Öffnungsrate`]
         : ["Sichtbar auf den wichtigsten Buchungs- und Informationsseiten", "Konstante Präsenz bei einer engagierten Community", "Formate " + p.formats.map((f) => `${f.w} × ${f.h}`).join(", ") + " px"];
       bullets.forEach((b) => ul.append(el("li", {}, b)));
       card.append(ul);
@@ -484,6 +511,7 @@
       $("#price-cards").textContent = "Preise konnten nicht geladen werden.";
       return;
     }
+    renderMedia();
     renderCards();
     buildForm();
 
@@ -510,13 +538,18 @@
       if (fi.files.length) checkFile(fi);
     }));
 
-    // Vorauswahl per URL, z. B. ?produkt=sidebar&anzahl=6#buchen
+    // Vorauswahl per URL, z. B. ?produkt=newsletter,sidebar&anzahl=3&ausgaben=6#buchen
     const params = new URLSearchParams(location.search);
-    const preset = params.get("produkt");
-    if (preset && form.elements[preset + "_on"]) {
-      form.elements[preset + "_on"].checked = true;
-      const n = parseInt(params.get("anzahl"), 10);
-      if (n && preset === "sidebar") form.elements.sidebar_qty.value = n;
+    (params.get("produkt") || "").split(",").forEach((key) => {
+      if (form.elements[key + "_on"]) form.elements[key + "_on"].checked = true;
+    });
+    const n = parseInt(params.get("anzahl"), 10);
+    if (n && isOn("sidebar")) form.elements.sidebar_qty.value = n;
+    const ausgaben = parseInt(params.get("ausgaben"), 10);
+    if (ausgaben && isOn("newsletter")) {
+      const hint = $("#nl-hint");
+      hint.textContent = `Empfohlen: ${ausgaben} Ausgaben. Klicken Sie Ihre Wunschtermine an.`;
+      hint.hidden = false;
     }
 
     form.addEventListener("input", render);

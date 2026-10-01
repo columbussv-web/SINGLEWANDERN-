@@ -39,7 +39,9 @@ Eine der beiden Varianten, Intervall stündlich:
 
 ## 7. Einbindung
 - [ ] In WordPress einen Menüpunkt „Werben“ oder „Mediadaten“ mit Link auf `/werbung/` anlegen
-- [ ] In der Mediadaten-PDF und in E-Mail-Signaturen den Link ergänzen, gern mit Vorauswahl, z. B. `/werbung/?produkt=newsletter#buchen`
+- [ ] Alte Mediadaten-PDF auf der Website durch den Link `/werbung/mediadaten/` ersetzen, damit nur noch aktuelle Preise kursieren
+- [ ] Für Kaltakquise-Mails je Branche den passenden Link nutzen, z. B. `/werbung/partner/?branche=outdoor`
+- [ ] In E-Mail-Signaturen den Buchungslink ergänzen, gern mit Vorauswahl, z. B. `/werbung/?produkt=newsletter#buchen`
 - [ ] Datenschutzerklärung um das Buchungsformular ergänzen: Zweck Vertragsanbahnung, gespeicherte Daten, Speicherdauer
 
 ## Updates

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Partner werden bei SINGLEWANDERN®</title>
+  <meta name="description" content="Werben bei SINGLEWANDERN®: Newsletter- und Sidebar-Banner für eine aktive, naturverbundene Community. Reichweite, Beispielrechnung und Online-Buchung.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Cpath d=%27M2 26 12 10l6 9 4-5 8 12z%27 fill=%27%232f6b3f%27/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/styles.css">
+  <style>
+    .calc { display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: start; }
+    .calc-in { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+    .calc-out { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+    .tile strong { display: block; font-family: Fraunces, Georgia, serif; font-size: 1.6rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .tile span { font-size: .85rem; color: var(--muted); }
+    .tile.key { background: var(--accent); border-color: var(--accent); }
+    .tile.key strong, .tile.key span { color: var(--accent-ink); }
+    .why { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .why div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+    .why h3 { font-size: 1.05rem; }
+    .why p { margin: 0; color: var(--muted); }
+    .case { background: var(--surface); border-left: 4px solid var(--accent); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px; }
+    .case blockquote { margin: 0 0 10px; font-family: Fraunces, Georgia, serif; font-size: 1.15rem; }
+    .seg-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .seg-links a { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); text-decoration: none; color: var(--text); background: var(--surface); font-size: .9rem; }
+    .seg-links a.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .cta-final { text-align: center; }
+    .cta-final .hero-cta { justify-content: center; }
+    @media (max-width: 800px) { .calc { grid-template-columns: 1fr; } .calc-out { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="./">SINGLEWANDERN<sup>®</sup> <span>Partner</span></a>
+      <nav class="nav">
+        <a href="#rechnung">Beispielrechnung</a>
+        <a href="../mediadaten/" target="_blank">Mediadaten</a>
+        <a href="../#buchen" class="btn btn-small">Jetzt buchen</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <p class="eyebrow" id="seg-label">Für Partner</p>
+          <h1 id="seg-headline">Ihre Marke dort, wo Menschen gemeinsam unterwegs sind</h1>
+          <p class="lead" id="seg-intro"></p>
+          <div class="hero-cta">
+            <a href="../#buchen" class="btn" data-book>Empfohlenes Paket buchen</a>
+            <a href="../mediadaten/" class="btn btn-ghost" target="_blank">Mediadaten als PDF</a>
+          </div>
+        </div>
+        <ul class="kpis" id="kpis"></ul>
+      </div>
+    </section>
+
+    <section class="section alt">
+      <div class="wrap">
+        <h2>Die Community</h2>
+        <div class="tags" id="audience"></div>
+        <p class="muted" id="credibility"></p>
+      </div>
+    </section>
+
+    <section class="section" id="rechnung">
+      <div class="wrap">
+        <h2>Beispielrechnung</h2>
+        <p class="muted">Stellen Sie ein Paket zusammen und sehen Sie Reichweite und Kosten. Die Rechnung basiert auf unseren Mediadaten. Die Öffnungsrate ist der dort genannte Höchstwert.</p>
+        <div class="calc">
+          <div class="calc-in">
+            <label>Newsletter-Versände
+              <select id="c-nl"></select>
+            </label>
+            <label>Sidebar-Banner (Monate)
+              <select id="c-sb"></select>
+            </label>
+            <a href="../#buchen" class="btn btn-block" data-book>Dieses Paket buchen</a>
+          </div>
+          <div class="calc-out">
+            <div class="tile"><strong id="o-reach">0</strong><span>Newsletter-Zustellungen</span></div>
+            <div class="tile"><strong id="o-opens">0</strong><span>Öffnungen, bis zu</span></div>
+            <div class="tile"><strong id="o-months">0</strong><span>Monate Präsenz auf singlewandern.de</span></div>
+            <div class="tile"><strong id="o-tkp">–</strong><span>Preis pro 1.000 Öffnungen, Newsletter</span></div>
+            <div class="tile"><strong id="o-save">0 €</strong><span>Ersparnis durch Staffel und Kombirabatt</span></div>
+            <div class="tile key"><strong id="o-net">0 €</strong><span>Investition netto zzgl. MwSt.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt">
+      <div class="wrap">
+        <h2>Warum SINGLEWANDERN®</h2>
+        <div class="why">
+          <div><h3>Exklusiv statt Werbeblock</h3><p>Pro Newsletter-Ausgabe zeigen wir genau einen Partner, auf der Website höchstens <span id="w-slots">3</span> pro Monat. Ihre Botschaft geht nicht unter.</p></div>
+          <div><h3>Glaubwürdiges Umfeld</h3><p id="w-cred"></p></div>
+          <div><h3>Einfach gebucht</h3><p>Termine online wählen, Banner hochladen, Auftragsbestätigung als PDF. Nach der Kampagne erhalten Sie einen Bericht mit allen Versanddaten.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="cases" hidden>
+      <div class="wrap">
+        <h2>Partner berichten</h2>
+        <div id="case-list"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <h2>Passend für Ihre Branche</h2>
+        <nav class="seg-links" id="seg-links"></nav>
+      </div>
+    </section>
+
+    <section class="section alt cta-final">
+      <div class="wrap">
+        <h2>Freie Termine sichern</h2>
+        <p class="muted">Jede Newsletter-Ausgabe hat nur einen Werbeplatz. Wir merken Ihre Wunschtermine sofort für Sie vor.</p>
+        <div class="hero-cta">
+          <a href="../#buchen" class="btn" data-book>Termine ansehen und buchen</a>
+          <a href="mailto:werbung@singlewandern.de?subject=Werbung%20bei%20SINGLEWANDERN" class="btn btn-ghost" id="contact">Persönliche Beratung</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>SINGLEWANDERN® · <a href="https://www.singlewandern.de">www.singlewandern.de</a> · <a href="../">Werbeformen und Preise</a></p>
+    </div>
+  </footer>
+
+  <script src="partner.js"></script>
+</body>
+</html>

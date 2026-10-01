@@ -34,6 +34,7 @@
           <div class="hero-cta">
             <a href="#buchen" class="btn">Werbeplatz buchen</a>
             <a href="#werbeformen" class="btn btn-ghost">Preise ansehen</a>
+            <a href="mediadaten/" class="btn btn-ghost" target="_blank">Mediadaten als PDF</a>
           </div>
         </div>
         <ul class="kpis" id="reichweite">
@@ -48,10 +49,10 @@
     <section class="section">
       <div class="wrap">
         <h2>Zielgruppe</h2>
-        <div class="tags">
+        <div class="tags" id="audience">
           <span>naturverbunden</span><span>outdoor-affin</span><span>gesundheitsorientiert</span><span>reisefreudig</span><span>kaufkräftig</span><span>umweltbewusst</span>
         </div>
-        <p class="muted">Hohe Glaubwürdigkeit, da die Inhalte von zertifizierten Wanderführern und einem lebendigen Community-Format stammen. Ideal für Outdoor- und Funktionsbekleidung, Ausrüstung, gesunde Ernährung, Reisen, Events sowie regionale Anbieter.</p>
+        <p class="muted" id="credibility">Hohe Glaubwürdigkeit, da die Inhalte von zertifizierten Wanderführern und einem lebendigen Community-Format stammen. Ideal für Outdoor- und Funktionsbekleidung, Ausrüstung, gesunde Ernährung, Reisen, Events sowie regionale Anbieter.</p>
       </div>
     </section>
 
@@ -83,6 +84,7 @@
                 <div class="product-body">
                   <p class="field-label">Ausgaben wählen <span class="muted" id="nl-count">0 gewählt</span></p>
                   <div class="cal-legend"><span class="dot free"></span>frei <span class="dot sel"></span>gewählt <span class="dot taken"></span>belegt</div>
+                  <p class="hint" id="nl-hint" hidden></p>
                   <div id="nl-cal" class="nl-cal"><p class="muted small">Termine werden geladen …</p></div>
                   <input type="hidden" name="newsletter_dates">
                   <div class="row two">
@@ -202,7 +204,7 @@
     <section class="section alt" id="technik">
       <div class="wrap">
         <h2>Technische Angaben</h2>
-        <div class="specs">
+        <div class="specs" id="specs">
           <div>
             <h3>Allgemein</h3>
             <ul class="list">
@@ -247,7 +249,7 @@
 
   <footer class="site-footer">
     <div class="wrap">
-      <p>SINGLEWANDERN® · <a href="https://www.singlewandern.de">www.singlewandern.de</a> · <a href="mailto:werbung@singlewandern.de" id="mail-link">Kontakt Mediaberatung</a></p>
+      <p>SINGLEWANDERN® · <a href="https://www.singlewandern.de">www.singlewandern.de</a> · <a href="partner/">Für Partner</a> · <a href="mediadaten/" target="_blank">Mediadaten (PDF)</a> · <a href="mailto:werbung@singlewandern.de" id="mail-link">Kontakt Mediaberatung</a></p>
     </div>
   </footer>
 

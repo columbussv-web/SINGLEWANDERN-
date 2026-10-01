@@ -183,7 +183,7 @@ function report_text(array $b): string
     foreach ($b['items'] as $it) {
         $o[] = $it['name'] . " ({$it['format']})";
         if (!empty($it['dates'])) {
-            $o[] = '  ' . count($it['dates']) . ' Newsletter-Versände an ca. 5.000 Abonnentinnen und Abonnenten:';
+            $o[] = '  ' . count($it['dates']) . ' Newsletter-Versände an ca. ' . number_format(pricing()['media']['subscribers'], 0, ',', '.') . ' Abonnentinnen und Abonnenten:';
             foreach ($it['dates'] as $d) {
                 $o[] = '  - ' . de_date($d);
             }

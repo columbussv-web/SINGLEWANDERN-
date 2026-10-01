@@ -16,6 +16,8 @@ Buchungsseite für die Werbeformen laut Mediadaten 2025/2026. Läuft auf jedem P
 - Versandübersicht: 2 Tage vor jeder gebuchten Newsletter-Ausgabe eine Mail mit Partner, Status, Ziel-URL inklusive UTM, ALT-Text und Banner im Anhang. Fehlt das Banner, stehen Kontakt und Upload-Link darin.
 - Banner-Erinnerung: 5 Tage vor dem ersten Termin automatisch an Kunden mit fehlendem Banner, einmal je Werbeform
 - Kampagnenbericht: 3 Tage nach Kampagnenende an den Kunden, mit Versanddaten, optionalen Kennzahlen aus dem Admin und UTM-Hinweis
+- Partner-Landingpage unter `/partner/` für die Kaltakquise, je Branche anpassbar über `?branche=outdoor|reisen|region|ernaehrung|events`. Mit Beispielrechnung aus den Mediadaten und empfohlenem Paket, das direkt in die Buchung führt. Echte Fallbeispiele in `assets/landing.json` unter `cases` eintragen, der Abschnitt erscheint erst dann.
+- Mediadaten-PDF unter `/mediadaten/`, bei jedem Abruf aus `pricing.json` erzeugt. Preise, Reichweite, Zielgruppe und technische Angaben stehen nur dort.
 - Adminbereich unter `/admin/`: Systemcheck für den Livegang, nächste Newsletter-Ausgaben, Newsletter-Belegung, Sidebar-Auslastung, Bannervorschau, PDF-Vorschau, erneuter Versand. Status angefragt, bestätigt, abgelaufen, storniert. Stornierte und abgelaufene Termine sind sofort wieder buchbar. Reaktivieren klappt nur, solange die Termine noch frei sind.
 
 ## Dateien
@@ -31,6 +33,8 @@ Buchungsseite für die Werbeformen laut Mediadaten 2025/2026. Läuft auf jedem P
 | `banner/index.php` | Kundenseite zum Nachreichen der Banner |
 | `api/digest.php`, `api/cron.php` | Zeitgesteuerte Aufgaben: Versandübersicht, Erinnerung, Bericht |
 | `api/config.local.example.php` | Vorlage für die eigene Konfiguration |
+| `partner/`, `assets/landing.json` | Landingpage und Branchentexte |
+| `mediadaten/`, `api/mediadaten.php` | Mediadaten als PDF |
 | `tools/build-release.sh` | Baut das Upload-Paket nach `dist/` |
 | `DEPLOY.md` | Checkliste für den Livegang |
 | `storage/` | Buchungen (`bookings.json`) und Banner, per `.htaccess` gesperrt |
@@ -69,10 +73,10 @@ Schritt für Schritt in `DEPLOY.md`. Paket bauen mit `tools/build-release.sh`. K
 6. Testbuchung abschicken, Mails und Adminbereich prüfen, Testbuchung stornieren.
 
 ## Preise ändern
-Nur `assets/pricing.json` bearbeiten. Dort stehen auch Vormerkfrist (`holdDays`) und Sidebar-Plätze (`slots`). Preiskarten, Formular, Rechner und Server übernehmen die Werte automatisch.
+Nur `assets/pricing.json` bearbeiten. Unter `media` stehen Reichweite, Öffnungsrate, Profil, Zielgruppe und technische Angaben. Dort stehen auch Vormerkfrist (`holdDays`) und Sidebar-Plätze (`slots`). Preiskarten, Formular, Rechner und Server übernehmen die Werte automatisch.
 
 ## Deep Links
-`?produkt=newsletter`, `?produkt=sidebar&anzahl=6`, `?produkt=wanderung`, `?produkt=beitrag`, jeweils mit `#buchen`.
+`?produkt=newsletter`, `?produkt=sidebar&anzahl=6`, `?produkt=newsletter,sidebar&anzahl=3&ausgaben=6`, `?produkt=wanderung`, `?produkt=beitrag`, jeweils mit `#buchen`.
 
 ## Ohne PHP
 Auf reinem Static Hosting (GitHub Pages) funktioniert die Seite eingeschränkt: Kalender ohne Live-Belegung, Versand per Mailprogramm, kein Upload.

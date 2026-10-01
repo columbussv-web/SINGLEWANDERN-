@@ -1,0 +1,41 @@
+{
+  "default": {
+    "label": "Partner",
+    "headline": "Ihre Marke dort, wo Menschen gemeinsam unterwegs sind",
+    "intro": "SINGLEWANDERN® erreicht eine aktive, kaufkräftige Community, die Natur, Bewegung und Begegnung sucht. Sichtbar im Newsletter und auf der Website, exklusiv pro Ausgabe.",
+    "package": { "newsletter": 6, "sidebar": 3 }
+  },
+  "segments": {
+    "outdoor": {
+      "label": "Outdoor und Ausrüstung",
+      "headline": "Ausrüstung für Menschen, die jedes Wochenende draußen sind",
+      "intro": "Unsere Community wandert regelmäßig in geführten Gruppen. Wanderschuhe, Rucksäcke und Funktionskleidung sind für sie kein Nebenthema, sondern Alltag.",
+      "package": { "newsletter": 6, "sidebar": 3 }
+    },
+    "reisen": {
+      "label": "Reisen und Tourismus",
+      "headline": "Reiseangebote für eine reisefreudige, aktive Zielgruppe",
+      "intro": "Wanderreisen, Aktivurlaub und Kurztrips passen genau zu einer Community, die Natur und Begegnung sucht. Erreichen Sie sie vor der nächsten Urlaubsplanung.",
+      "package": { "newsletter": 12, "sidebar": 6 }
+    },
+    "region": {
+      "label": "Regionale Anbieter",
+      "headline": "Sichtbar bei Wanderern in Ihrer Region",
+      "intro": "Gasthöfe, Hofläden, Ferienwohnungen und Freizeitanbieter profitieren von Gästen, die bewusst unterwegs sind und gern einkehren.",
+      "package": { "newsletter": 3, "sidebar": 3 }
+    },
+    "ernaehrung": {
+      "label": "Ernährung und Gesundheit",
+      "headline": "Gesunde Produkte für eine gesundheitsorientierte Community",
+      "intro": "Bewegung an der frischen Luft und bewusste Ernährung gehören für unsere Community zusammen. Ideal für Snacks, Getränke, Nahrungsergänzung und Gesundheitsangebote.",
+      "package": { "newsletter": 6, "sidebar": 0 }
+    },
+    "events": {
+      "label": "Events und Freizeit",
+      "headline": "Ihr Event bei Menschen, die gern Neues erleben",
+      "intro": "Singles, die aktiv Kontakte suchen, sind offen für Events, Kurse und Freizeitangebote. Mit dem Newsletter erreichen Sie sie rechtzeitig vor Ihrem Termin.",
+      "package": { "newsletter": 3, "sidebar": 0 }
+    }
+  },
+  "cases": []
+}

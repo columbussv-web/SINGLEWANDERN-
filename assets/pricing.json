@@ -1,4 +1,48 @@
 {
+  "media": {
+    "edition": "2025/2026",
+    "subscribers": 5000,
+    "sendsPerWeek": 2,
+    "openRate": 45,
+    "profile": "SINGLEWANDERN® ist die größte deutschsprachige Plattform für geführte Wanderungen speziell für Singles. Unsere Community sucht Bewegung, Begegnung und echte Naturerlebnisse. Die Zielgruppe ist aktiv, kaufkräftig, umweltbewusst und offen für hochwertige Produkte, Dienstleistungen und Reiseangebote.",
+    "audience": [
+      "naturverbunden",
+      "outdoor-affin",
+      "gesundheitsorientiert",
+      "reisefreudig",
+      "kaufkräftig",
+      "umweltbewusst"
+    ],
+    "credibility": "Hohe Glaubwürdigkeit, da die Inhalte von zertifizierten Wanderführern und einem lebendigen Community-Format stammen.",
+    "idealFor": "Outdoor- und Funktionsbekleidung, Ausrüstung, gesunde Ernährung, Reisen, Events sowie regionale Anbieter.",
+    "specs": {
+      "Allgemein": [
+        "JPG oder PNG, max. 150 KB, 72 dpi",
+        "Responsiv skalierbar (max-width: 100 %)",
+        "Keine Schrift kleiner als 18 px im Bild",
+        "Ziel-URL immer mitsenden"
+      ],
+      "Newsletter": [
+        "600 × 200 px (Standard)",
+        "600 × 300 px (visuell stärker)",
+        "1048 × 250 px (volle Desktop-Breite)",
+        "Maximalbreite im Newsletter 600 px, mobil-first"
+      ],
+      "Website": [
+        "Sidebar 300 × 250 px (Medium Rectangle)",
+        "Sidebar 300 × 600 px (Half Page)",
+        "Sidebar 160 × 600 px (Skyscraper)",
+        "Header 1048 × 250 px oder 1200 × 300 px auf Anfrage",
+        "Teaser 150 × 150 px auf Anfrage"
+      ],
+      "Gestaltung": [
+        "Wenig Text, große Elemente",
+        "Kontrastreich für geringe Bildschirmhelligkeit",
+        "Mobile Darstellung immer prüfen",
+        "Optional UTM-Tracking und ALT-Text"
+      ]
+    }
+  },
   "vatRate": 0.19,
   "comboDiscount": 0.1,
   "holdDays": 7,
