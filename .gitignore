@@ -2,3 +2,4 @@ storage/*
 !storage/.htaccess
 api/config.local.php
 dist/
+akquise/
