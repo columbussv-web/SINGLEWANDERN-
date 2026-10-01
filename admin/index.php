@@ -63,6 +63,68 @@ if ($authed && isset($_GET['pdf'])) {
     exit;
 }
 
+// Kennzahlen für den Kampagnenbericht speichern, optional Bericht sofort senden
+if ($authed && isset($_POST['id'], $_POST['report_notes']) && $csrfOk()) {
+    $id = (string) $_POST['id'];
+    $notes = mb_substr(trim((string) $_POST['report_notes']), 0, 3000);
+    $sendNow = isset($_POST['send_report']);
+    $target = null;
+    with_bookings(function (array $all) use ($id, $notes, $sendNow, &$target) {
+        foreach ($all as &$b) {
+            if ($b['id'] === $id) {
+                $b['reportNotes'] = $notes;
+                if ($sendNow && $b['status'] === 'bestaetigt') {
+                    $b['reportSent'] = date('c');
+                    $target = $b;
+                }
+                return $all;
+            }
+        }
+        return null;
+    }, true);
+    $_SESSION['flash'] = $target
+        ? (send_report($target) ? "Kampagnenbericht {$id} gesendet." : 'Bericht gespeichert, Mailversand fehlgeschlagen.')
+        : 'Kennzahlen gespeichert.';
+    header('Location: ./?f=' . urlencode((string) ($_GET['f'] ?? '')));
+    exit;
+}
+
+// Systemcheck für den Livegang
+$checks = [];
+if ($authed && isset($_GET['check'])) {
+    $c = config();
+    $add = function (string $label, bool $ok, string $info = '') use (&$checks) {
+        $checks[] = [$label, $ok, $info];
+    };
+    $add('PHP-Version ab 8.1', PHP_VERSION_ID >= 80100, PHP_VERSION);
+    foreach (['mbstring', 'fileinfo', 'json'] as $ext) {
+        $add("PHP-Erweiterung $ext", extension_loaded($ext));
+    }
+    $add('mail() verfügbar', function_exists('mail') && !$c['mailToLog'], $c['mailToLog'] ? 'Testmodus mailToLog ist aktiv' : '');
+    $add('Speicher beschreibbar', is_writable(storage_path()) && is_writable(storage_path('uploads')), storage_path());
+    $add('Eigene Konfiguration api/config.local.php', is_file(__DIR__ . '/../api/config.local.php'));
+    $add('Empfängeradresse gültig', (bool) filter_var($c['bookingEmail'], FILTER_VALIDATE_EMAIL), $c['bookingEmail'] . ' – Postfach muss existieren');
+    $add('Absenderadresse eigener Domain', str_ends_with($c['mailFrom'], '@' . preg_replace('#^www\.#', '', (string) parse_url($c['siteUrl'], PHP_URL_HOST))), $c['mailFrom']);
+    $add('Firmenanschrift für PDF', (bool) $c['company']['lines']);
+    $add('siteUrl mit HTTPS', str_starts_with($c['siteUrl'], 'https://'), $c['siteUrl']);
+    $add('cronKey gesetzt', $c['cronKey'] !== '');
+    $sched = is_file(storage_path('scheduler.json')) ? (json_decode((string) file_get_contents(storage_path('scheduler.json')), true) ?: []) : [];
+    $cronOk = isset($sched['cron']) && strtotime($sched['cron']) > time() - 2 * 3600;
+    $add('Zeitgeber läuft (letzte 2 Stunden)', $cronOk, isset($sched['cron']) ? 'zuletzt ' . date('d.m.Y H:i', strtotime($sched['cron'])) : 'noch nie per Cron aufgerufen');
+    // Schutz der Buchungsdaten von außen prüfen
+    $real = realpath(storage_path());
+    $root = realpath(__DIR__ . '/..');
+    if ($real && $root && str_starts_with($real, $root)) {
+        $url = rtrim($c['siteUrl'], '/') . substr($real, strlen($root)) . '/bookings.json';
+        $ctx = stream_context_create(['http' => ['ignore_errors' => true, 'timeout' => 4, 'method' => 'HEAD']]);
+        @file_get_contents($url, false, $ctx);
+        $code = isset($http_response_header[0]) && preg_match('/\s(\d{3})\s/', $http_response_header[0], $m) ? (int) $m[1] : 0;
+        $add('Buchungsdaten von außen gesperrt', in_array($code, [403, 404], true), $code ? "HTTP $code für $url" : "nicht erreichbar: $url");
+    } else {
+        $add('Buchungsdaten außerhalb des Webroots', true, (string) $real);
+    }
+}
+
 // Statuswechsel und erneuter Versand
 if ($authed && isset($_POST['id']) && $csrfOk()) {
     $id = (string) $_POST['id'];
@@ -164,6 +226,8 @@ $actions = ['bestaetigt' => 'Bestätigen und PDF senden', 'angefragt' => 'Zurüc
   .next { width: 100%; border-collapse: collapse; margin-bottom: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
   .next td { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: .92rem; }
   .next .warn { color: var(--warm); font-weight: 600; }
+  .checks .ok { color: var(--accent); font-weight: 600; }
+  .report { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px; }
   @media (max-width: 640px) { .next td { display: block; border: 0; padding: 4px 14px; } .next tr { display: block; border-bottom: 1px solid var(--line); padding: 8px 0; } }
 </style>
 </head>
@@ -180,6 +244,15 @@ $actions = ['bestaetigt' => 'Bestätigen und PDF senden', 'angefragt' => 'Zurüc
 <?php else: ?>
   <div class="bk-head"><h2>Buchungsanfragen</h2><a href="?logout=1">Abmelden</a></div>
   <?php if ($flash): ?><p class="flash"><?= $h($flash) ?></p><?php endif ?>
+
+  <p class="small"><a href="?check=1">Systemcheck ausführen</a></p>
+  <?php if ($checks): ?>
+    <table class="next checks">
+      <?php foreach ($checks as [$label, $ok, $info]): ?>
+        <tr><td><?= $ok ? '<span class="ok">OK</span>' : '<span class="warn">Offen</span>' ?></td><td><?= $h($label) ?></td><td class="muted small"><?= $h($info) ?></td></tr>
+      <?php endforeach ?>
+    </table>
+  <?php endif ?>
 
   <h3>Nächste Newsletter-Ausgaben</h3>
   <table class="next">
@@ -255,6 +328,22 @@ $actions = ['bestaetigt' => 'Bestätigen und PDF senden', 'angefragt' => 'Zurüc
         <?php endif ?>
         <a class="btn btn-small btn-ghost" href="mailto:<?= $h($b['customer']['email']) ?>?subject=<?= $h(rawurlencode('Ihre Buchung ' . $b['id'])) ?>">Kunde anschreiben</a>
       </div>
+      <?php if ($b['status'] === 'bestaetigt' && $b['items']): ?>
+        <form method="post" action="?f=<?= $h($filter) ?>" class="report">
+          <input type="hidden" name="csrf" value="<?= $h($_SESSION['csrf']) ?>">
+          <input type="hidden" name="id" value="<?= $h($b['id']) ?>">
+          <label>Kennzahlen für den Kampagnenbericht (optional)
+            <textarea name="report_notes" rows="3" placeholder="z. B. Öffnungsrate je Ausgabe, Klicks auf das Banner"><?= $h($b['reportNotes'] ?? '') ?></textarea>
+          </label>
+          <p class="muted small"><?= !empty($b['reportSent'])
+              ? 'Bericht gesendet am ' . $h(date('d.m.Y', strtotime($b['reportSent'])))
+              : 'Automatischer Bericht am ' . $h((new DateTimeImmutable(booking_end($b)))->modify('+' . (int) config()['reportDaysAfter'] . ' days')->format('d.m.Y')) ?></p>
+          <div class="actions">
+            <button class="btn btn-small btn-ghost">Kennzahlen speichern</button>
+            <button class="btn btn-small btn-ghost" name="send_report" value="1"><?= empty($b['reportSent']) ? 'Bericht jetzt senden' : 'Bericht erneut senden' ?></button>
+          </div>
+        </form>
+      <?php endif ?>
     </article>
   <?php endforeach ?>
 <?php endif ?>

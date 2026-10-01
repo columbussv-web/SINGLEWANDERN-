@@ -17,6 +17,10 @@ $config = [
     'siteUrl' => 'https://www.singlewandern.de/werbung/',
     // Tage vor einer Newsletter-Ausgabe, an denen die Versandübersicht kommt
     'digestDaysBefore' => 2,
+    // Tage vor dem ersten Termin, an denen Kunden an fehlende Banner erinnert werden
+    'reminderDaysBefore' => 5,
+    // Tage nach Kampagnenende bis zum automatischen Bericht an den Kunden
+    'reportDaysAfter' => 3,
     // Schlüssel für api/cron.php, z. B. bin2hex(random_bytes(16)). Leer = nur per Kommandozeile
     'cronKey' => '',
     // Absolute URL zum Adminbereich für den Link in der Benachrichtigung

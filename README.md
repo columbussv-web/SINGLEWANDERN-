@@ -14,7 +14,9 @@ Buchungsseite für die Werbeformen laut Mediadaten 2025/2026. Läuft auf jedem P
 - Mail an Mediaberatung und Kopie an den Kunden
 - Banner nachreichen: persönlicher Link je Buchung (Eingangsmail, Auftragsbestätigung, PDF). Kunden laden fehlende Banner hoch oder ersetzen vorhandene, die Mediaberatung bekommt bei jedem Eingang eine Mail.
 - Versandübersicht: 2 Tage vor jeder gebuchten Newsletter-Ausgabe eine Mail mit Partner, Status, Ziel-URL inklusive UTM, ALT-Text und Banner im Anhang. Fehlt das Banner, stehen Kontakt und Upload-Link darin.
-- Adminbereich unter `/admin/`: nächste Newsletter-Ausgaben, Newsletter-Belegung, Sidebar-Auslastung, Bannervorschau, PDF-Vorschau, erneuter Versand. Status angefragt, bestätigt, abgelaufen, storniert. Stornierte und abgelaufene Termine sind sofort wieder buchbar. Reaktivieren klappt nur, solange die Termine noch frei sind.
+- Banner-Erinnerung: 5 Tage vor dem ersten Termin automatisch an Kunden mit fehlendem Banner, einmal je Werbeform
+- Kampagnenbericht: 3 Tage nach Kampagnenende an den Kunden, mit Versanddaten, optionalen Kennzahlen aus dem Admin und UTM-Hinweis
+- Adminbereich unter `/admin/`: Systemcheck für den Livegang, nächste Newsletter-Ausgaben, Newsletter-Belegung, Sidebar-Auslastung, Bannervorschau, PDF-Vorschau, erneuter Versand. Status angefragt, bestätigt, abgelaufen, storniert. Stornierte und abgelaufene Termine sind sofort wieder buchbar. Reaktivieren klappt nur, solange die Termine noch frei sind.
 
 ## Dateien
 | Pfad | Zweck |
@@ -27,10 +29,15 @@ Buchungsseite für die Werbeformen laut Mediadaten 2025/2026. Läuft auf jedem P
 | `api/confirmation.php`, `api/pdf.php` | Auftragsbestätigung, PDF-Generator ohne externe Bibliothek |
 | `admin/index.php` | Verwaltung |
 | `banner/index.php` | Kundenseite zum Nachreichen der Banner |
-| `api/digest.php`, `api/cron.php` | Versandübersicht vor jeder Ausgabe |
+| `api/digest.php`, `api/cron.php` | Zeitgesteuerte Aufgaben: Versandübersicht, Erinnerung, Bericht |
+| `api/config.local.example.php` | Vorlage für die eigene Konfiguration |
+| `tools/build-release.sh` | Baut das Upload-Paket nach `dist/` |
+| `DEPLOY.md` | Checkliste für den Livegang |
 | `storage/` | Buchungen (`bookings.json`) und Banner, per `.htaccess` gesperrt |
 
 ## Einrichtung auf IONOS
+Schritt für Schritt in `DEPLOY.md`. Paket bauen mit `tools/build-release.sh`. Kurzfassung:
+
 1. Ordner per FTP hochladen, z. B. nach `/werbung/`.
 2. `api/config.local.php` anlegen:
    ```php

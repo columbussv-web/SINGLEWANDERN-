@@ -39,16 +39,16 @@ function json_out(array $data, int $status = 200): never
     exit;
 }
 
-/** Rückfallebene ohne Cronjob: Versandübersicht höchstens einmal pro Stunde bei Seitenaufrufen. */
+/** Rückfallebene ohne Cronjob: geplante Aufgaben höchstens einmal pro Stunde bei Seitenaufrufen. */
 function digest_on_shutdown(): void
 {
-    $f = storage_path('digest.json');
+    $f = storage_path('scheduler.json');
     if (is_file($f) && filemtime($f) > time() - 3600) {
         return;
     }
     register_shutdown_function(function () {
         require_once __DIR__ . '/digest.php';
-        run_digest();
+        run_scheduled('page');
     });
 }
 

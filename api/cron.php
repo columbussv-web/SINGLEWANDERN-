@@ -12,6 +12,6 @@ if (PHP_SAPI !== 'cli') {
     }
 }
 
-$done = run_digest();
-$msg = $done ? 'Gemeldet: ' . implode(', ', $done) : 'Nichts zu melden.';
-PHP_SAPI === 'cli' ? print($msg . "\n") : json_out(['ok' => true, 'sent' => $done]);
+$done = run_scheduled('cron');
+$msg = implode('; ', array_map(fn($k, $v) => "$k: " . ($v ? implode(', ', $v) : '–'), array_keys($done), $done));
+PHP_SAPI === 'cli' ? print($msg . "\n") : json_out(['ok' => true] + $done);
