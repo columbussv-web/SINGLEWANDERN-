@@ -1,0 +1,3 @@
+storage/*
+!storage/.htaccess
+api/config.local.php

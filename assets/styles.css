@@ -156,6 +156,32 @@ input:user-invalid, textarea:user-invalid { border-color: var(--error); }
 .hint { font-size: .85rem; color: var(--warm); min-height: 1.2em; margin: 0 0 12px; }
 .error { color: var(--error); font-size: .88rem; margin: 10px 0 0; min-height: 1em; }
 
+.combo-note { background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; }
+.cards-request { margin-top: 20px; }
+.field-label { font-size: .9rem; font-weight: 500; margin: 0 0 6px; display: flex; justify-content: space-between; }
+.cal-legend { display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap; font-size: .8rem; color: var(--muted); margin-bottom: 10px; }
+.cal-legend .dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: -8px; border: 1px solid var(--line); vertical-align: -1px; }
+.dot.free { background: var(--surface); }
+.dot.sel { background: var(--accent); border-color: var(--accent); }
+.dot.taken { background: repeating-linear-gradient(45deg, var(--line) 0 3px, transparent 3px 6px); }
+.nl-cal { max-height: 320px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 16px; background: var(--bg); }
+.cal-month + .cal-month { margin-top: 12px; }
+.cal-title { font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 6px; }
+.cal-days { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
+.day { border: 1px solid var(--line); background: var(--surface); color: var(--text); padding: 8px 4px; border-radius: 8px; font: 500 .85rem Inter, sans-serif; cursor: pointer; font-variant-numeric: tabular-nums; }
+.day:hover:not(:disabled) { border-color: var(--accent); }
+.day.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.day.taken { cursor: not-allowed; color: var(--muted); text-decoration: line-through; background: repeating-linear-gradient(45deg, var(--surface-alt) 0 4px, transparent 4px 8px); }
+input[type=file] { display: block; width: 100%; margin-top: 6px; font: 400 .9rem Inter, sans-serif; color: var(--muted); }
+input[type=file]::file-selector-button { font: 600 .85rem Inter, sans-serif; border: 1.5px solid var(--accent); color: var(--accent); background: transparent; border-radius: 999px; padding: 7px 14px; margin-right: 10px; cursor: pointer; }
+.file-check { margin: -6px 0 14px; min-height: 0; }
+.file-check:empty { display: none; }
+.file-check.ok { color: var(--accent); }
+.file-check.warn { color: var(--warm); }
+.file-check.bad { color: var(--error); }
+.line.combo { color: var(--accent); font-weight: 600; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
 .success { background: var(--surface); border: 1px solid var(--accent); border-radius: var(--radius); padding: 28px; margin-top: 24px; }
 
 .specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 20px; }
